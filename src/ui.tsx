@@ -53,7 +53,7 @@ const uiComponent = () => (
     </UiEntity>
 
     {/* Diálogo del NPC */}
-    {true && (
+    {showDialog && (
       <UiEntity
         uiTransform={{
           width: '80%',

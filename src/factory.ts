@@ -43,7 +43,7 @@ export function createCube(x: number, y: number, z: number, spawner = true): Ent
 }
 
 // Función para crear el personaje
-export function createCharacter(model: string, position: Vector3): Entity {
+export function createCharacter(model: string, position: Vector3, scale?: Vector3): Entity {
   const characterEntity: Entity = engine.addEntity()
 
   GltfContainer.create(characterEntity, {
@@ -51,7 +51,8 @@ export function createCharacter(model: string, position: Vector3): Entity {
   })
 
   Transform.create(characterEntity, {
-    position: position
+    position: position,
+    scale: scale || Vector3.create(1, 1, 1)
   })
 
   MeshCollider.setBox(characterEntity)
