@@ -7,10 +7,11 @@ import {
   PointerEvents,
   PointerEventType,
   InputAction,
-  Material
+  Material,
+  GltfContainer
 } from '@dcl/sdk/ecs'
 import { Cube, Spinner } from './components'
-import { Color4 } from '@dcl/sdk/math'
+import { Color4, Vector3 } from '@dcl/sdk/math'
 import { getRandomHexColor } from './utils'
 
 // Cube factory
@@ -39,4 +40,55 @@ export function createCube(x: number, y: number, z: number, spawner = true): Ent
   })
 
   return entity
+}
+
+// Función para crear el personaje
+export function createCharacter(model: string, position: Vector3): Entity {
+  const characterEntity: Entity = engine.addEntity()
+
+  GltfContainer.create(characterEntity, {
+    src: `models/${model}.glb`
+  })
+
+  Transform.create(characterEntity, {
+    position: position
+  })
+
+  MeshCollider.setBox(characterEntity)
+
+  // Añadir eventos de puntero al personaje
+  PointerEvents.create(characterEntity, {
+    pointerEvents: [
+      {
+        eventType: PointerEventType.PET_DOWN,
+        eventInfo: {
+          button: InputAction.IA_POINTER, // Botón izquierdo del ratón
+          hoverText: 'Hablar',
+          maxDistance: 15,
+          showFeedback: true
+        }
+      }
+    ]
+  })
+
+  return characterEntity
+}
+
+ // Función para crear objetos recolectables
+ export function createCollectible(id: string, model: string, position: Vector3): {id: string, entity: Entity} {
+  const entity: Entity = engine.addEntity()
+
+  GltfContainer.create(entity, {
+    src: `models/${model}.glb`
+  })
+
+  Transform.create(entity, {
+    position: position,
+    scale: Vector3.create(0.65, 0.65, 0.65) // Ajusta la escala para que se vea bien
+  })
+
+  Spinner.create(entity, { speed: 100 })
+
+  // Agregar el objeto a la lista de recolectables
+  return { id, entity }
 }

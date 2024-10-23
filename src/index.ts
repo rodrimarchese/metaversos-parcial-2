@@ -17,6 +17,7 @@ import {
 import { changeColorSystem, circularSystem } from './systems'
 import { setupUi, showDialogUI } from './ui' // Importamos showDialogUI
 import { Spinner } from './components'
+import { createCharacter, createCollectible } from './factory'
 
 // Definir una interfaz para los objetos recolectables
 interface Collectible {
@@ -36,48 +37,7 @@ export function main() {
 
   // Definir comportamiento
   engine.addSystem(circularSystem)
-  engine.addSystem(changeColorSystem)
-
-  // Función para crear el personaje
-  function createCharacter(model: string, position: Vector3): Entity {
-    const characterEntity: Entity = engine.addEntity()
-
-    GltfContainer.create(characterEntity, {
-      src: `models/${model}.glb`
-    })
-
-    Transform.create(characterEntity, {
-      position: position
-    })
-
-    MeshCollider.setBox(characterEntity)
-
-    // Añadir eventos de puntero al personaje
-    PointerEvents.create(characterEntity, {
-      pointerEvents: [
-        {
-          eventType: PointerEventType.PET_DOWN,
-          eventInfo: {
-            button: InputAction.IA_POINTER, // Botón izquierdo del ratón
-            hoverText: 'Hablar',
-            maxDistance: 15,
-            showFeedback: true
-          }
-        }
-      ]
-    })
-
-    // PointerEvents.create(characterEntity, {
-    //   pointerEvents: [
-    //     {
-    //       eventType: PointerEventType.PET_DOWN,
-    //       eventInfo: { button: InputAction.IA_POINTER, hoverText: 'Change Color' }
-    //     }
-    //   ]
-    // })
-
-    return characterEntity
-  }
+  engine.addSystem(changeColorSystem)  
 
   // Crear el personaje
   characterEntity = createCharacter('robot2', Vector3.create(5, 1, 5))
@@ -98,29 +58,10 @@ export function main() {
     }
   })
 
-  // Función para crear objetos recolectables
-  function createCollectible(id: string, model: string, position: Vector3) {
-    const entity: Entity = engine.addEntity()
-
-    GltfContainer.create(entity, {
-      src: `models/${model}.glb`
-    })
-
-    Transform.create(entity, {
-      position: position,
-      scale: Vector3.create(0.65, 0.65, 0.65) // Ajusta la escala para que se vea bien
-    })
-
-    Spinner.create(entity, { speed: 100 })
-
-    // Agregar el objeto a la lista de recolectables
-    collectibles.push({ id, entity })
-  }
-
   // Crear tres objetos recolectables con identificadores únicos
-  createCollectible('pc1', 'pc', Vector3.create(3, 1, 3))
-  createCollectible('avocado', 'avocado', Vector3.create(6, 1, 3))
-  createCollectible('pc2', 'pc', Vector3.create(9, 1, 3))
+  collectibles.push(createCollectible('pc1', 'pc', Vector3.create(3, 1, 3)))
+  collectibles.push(createCollectible('avocado', 'avocado', Vector3.create(6, 1, 3)))
+  collectibles.push(createCollectible('pc2', 'pc', Vector3.create(9, 1, 3)))
 
   // Sistema para manejar la recolección
   engine.addSystem(() => {
@@ -200,8 +141,8 @@ export function main() {
 
     // Configurar la posición, escala y establecer el padre en el Transform
     Transform.create(avocadoHatEntity, {
-      position: Vector3.create(0, 0.7, 0), // Ajusta la posición vertical según sea necesario
-      scale: Vector3.create(0.65, 0.65, 0.65), // Ajusta la escala para que se vea bien
+      position: Vector3.create(0, 0.7, -0.25), // Ajusta la posición vertical según sea necesario
+      scale: Vector3.create(0.5, 0.5, 0.5), // Ajusta la escala para que se vea bien
       parent: playerEntity // Establecer el jugador como entidad padre
     })
   }
