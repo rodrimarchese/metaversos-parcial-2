@@ -12,7 +12,7 @@ import {
   PointerEventsResult,
 } from '@dcl/sdk/ecs'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
-import { Cube, Spinner } from './components'
+import { Cube, RobotNPC, Spinner } from './components'
 import { getRandomHexColor } from './utils'
 import { Collectible } from '.'
 
@@ -93,9 +93,20 @@ export function npcInteractionSystem(targetEntity: Entity, onTrigger: () => void
       }
     }
   }
-
 }
 
+export function robotNpcFacePlayerSystem() {
+  const playerEntity = engine.PlayerEntity
+  const playerTransform = Transform.get(playerEntity)
+  const playerPosition = playerTransform.position
+
+  for (const [entity] of engine.getEntitiesWith(RobotNPC)) {
+    const robotTransform = Transform.getMutable(entity)
+    const lookAtPosition = Vector3.subtract(playerPosition, robotTransform.position)
+    lookAtPosition.y = 0 // Mantener la rotación en el plano XZ
+    robotTransform.rotation = Quaternion.lookRotation(lookAtPosition, Vector3.Up())
+  }
+}
 
 function allCollectiblesCollected() {
   console.log('¡Has recolectado todos los objetos!')

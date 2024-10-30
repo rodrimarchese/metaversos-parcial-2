@@ -34,26 +34,6 @@
       "data": {}
     },
     {
-      "name": "inspector::Selection",
-      "jsonSchema": {
-        "type": "object",
-        "properties": {
-          "gizmo": {
-            "type": "integer",
-            "serializationType": "int32"
-          }
-        },
-        "serializationType": "map"
-      },
-      "data": {
-        "0": {
-          "json": {
-            "gizmo": 0
-          }
-        }
-      }
-    },
-    {
       "name": "inspector::SceneMetadata",
       "jsonSchema": {
         "type": "object",
@@ -339,22 +319,19 @@
             "thumbnail": "images/scene-thumbnail.png",
             "categories": [],
             "author": "SDK",
-            "email": "",
             "tags": [],
             "layout": {
+              "base": {
+                "x": 0,
+                "y": 0
+              },
               "parcels": [
                 {
                   "x": 0,
                   "y": 0
                 }
-              ],
-              "base": {
-                "x": 0,
-                "y": 0
-              }
+              ]
             },
-            "silenceVoiceChat": false,
-            "disablePortableExperiences": false,
             "spawnPoints": [
               {
                 "name": "spawn1",

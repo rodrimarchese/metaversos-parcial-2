@@ -8,10 +8,15 @@ import {
   PointerEventType,
   InputAction,
   Material,
-  GltfContainer
+  GltfContainer,
+  TextShape,
+  Font,
+  VisibilityComponent,
+  Billboard,
+  BillboardMode,
 } from '@dcl/sdk/ecs'
-import { Cube, Spinner } from './components'
-import { Color4, Vector3 } from '@dcl/sdk/math'
+import { Cube, RobotNPC, Spinner } from './components'
+import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { getRandomHexColor } from './utils'
 
 // Cube factory
@@ -43,8 +48,10 @@ export function createCube(x: number, y: number, z: number, spawner = true): Ent
 }
 
 // Función para crear el personaje
-export function createCharacter(model: string, position: Vector3, scale?: Vector3): Entity {
+export function createCharacter(model: string, position: Vector3, scale?: Vector3, message?: string): Entity {
   const characterEntity: Entity = engine.addEntity()
+
+  RobotNPC.create(characterEntity)
 
   GltfContainer.create(characterEntity, {
     src: `models/${model}.glb`
@@ -72,11 +79,13 @@ export function createCharacter(model: string, position: Vector3, scale?: Vector
     ]
   })
 
+  addDialog(characterEntity, message)
+
   return characterEntity
 }
 
- // Función para crear objetos recolectables
- export function createCollectible(id: string, model: string, position: Vector3): {id: string, entity: Entity} {
+// Función para crear objetos recolectables
+export function createCollectible(id: string, model: string, position: Vector3): { id: string, entity: Entity } {
   const entity: Entity = engine.addEntity()
 
   GltfContainer.create(entity, {
@@ -92,4 +101,51 @@ export function createCharacter(model: string, position: Vector3, scale?: Vector
 
   // Agregar el objeto a la lista de recolectables
   return { id, entity }
+}
+
+function addDialog(characterEntity: Entity, message?: string) {
+  if (!message) return
+
+  const plane = engine.addEntity()
+  MeshRenderer.setPlane(plane)
+  VisibilityComponent.create(plane, { visible: true })
+  Billboard.create(plane, { billboardMode: BillboardMode.BM_ALL })
+  Transform.create(plane, {
+    position: Vector3.create(4, 3, 1),
+    parent: characterEntity,
+    scale: { x: 5, y: 4, z: 10 },
+  })
+
+  const sign = engine.addEntity()
+  VisibilityComponent.create(sign, { visible: true })
+  Transform.create(sign, {
+    position: Vector3.create(0, 0, -0.3),
+    parent: plane,
+    rotation: Quaternion.create(0, 0, 0),
+  })
+  TextShape.create(sign, {
+    text: message,
+    textColor: { r: 0, g: 0, b: 0, a: 1 },
+    fontSize: 1,
+    font: Font.F_SANS_SERIF,
+  })
+
+  engine.addSystem(function () {
+    const playerEntity = engine.PlayerEntity
+    const playerTransform = Transform.get(playerEntity)
+    const playerPosition = playerTransform.position
+    const npcPosition = Transform.get(characterEntity).position
+
+    const distance = Vector3.distance(playerPosition, npcPosition)
+    const visibilityPlane = VisibilityComponent.getMutable(plane)
+    const visibilitySign = VisibilityComponent.getMutable(sign)
+
+    if (distance < 5) {
+      visibilityPlane.visible = true
+      visibilitySign.visible = true
+    } else {
+      visibilityPlane.visible = false
+      visibilitySign.visible = false
+    }
+  })
 }
