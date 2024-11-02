@@ -13,36 +13,70 @@ import {
   Font,
   VisibilityComponent,
   Billboard,
-  BillboardMode,
+  BillboardMode
 } from '@dcl/sdk/ecs'
 import { Cube, RobotNPC, Spinner } from './components'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { getRandomHexColor } from './utils'
 
 // Cube factory
-export function createCube(x: number, y: number, z: number, spawner = true): Entity {
+// Modificamos createCube para aceptar escala
+export function createCube(
+  x: number,
+  y: number,
+  z: number,
+  scaleX: number = 1,
+  scaleY: number = 0.5,
+  scaleZ: number = 1
+): Entity {
   const entity = engine.addEntity()
 
-  // Used to track the cubes
+  // Usado para rastrear los cubos
   Cube.create(entity)
 
-  Transform.create(entity, { position: { x, y, z } })
+  Transform.create(entity, {
+    position: { x, y, z },
+    scale: { x: scaleX, y: scaleY, z: scaleZ }
+  })
 
-  // set how the cube looks and collides
+  // Configuramos cómo se ve y colisiona el cubo
   MeshRenderer.setBox(entity)
   MeshCollider.setBox(entity)
   Material.setPbrMaterial(entity, { albedoColor: Color4.fromHexString(getRandomHexColor()) })
 
   // Make the cube spin, with the circularSystem
-  Spinner.create(entity, { speed: 100 * Math.random() })
+  // Spinner.create(entity, { speed: 100 * Math.random() })
 
   // Create PointerEvent with the hover feedback.
   // We are going to check the onClick event on the changeColorSystem.
-  PointerEvents.create(entity, {
-    pointerEvents: [
-      { eventType: PointerEventType.PET_DOWN, eventInfo: { button: InputAction.IA_POINTER, hoverText: 'Change Color' } }
-    ]
+  // PointerEvents.create(entity, {
+  //   pointerEvents: [
+  //     { eventType: PointerEventType.PET_DOWN, eventInfo: { button: InputAction.IA_POINTER, hoverText: 'Change Color' } }
+  //   ]
+  // })
+
+  return entity
+}
+
+export function createCheckpoint(
+  x: number,
+  y: number,
+  z: number,
+  scaleX: number,
+  scaleY: number,
+  scaleZ: number
+): Entity {
+  const entity = engine.addEntity()
+
+  Transform.create(entity, {
+    position: { x, y, z },
+    scale: { x: scaleX, y: scaleY, z: scaleZ }
   })
+
+  MeshRenderer.setBox(entity)
+  MeshCollider.setBox(entity)
+  // Aplicamos un color distintivo para los checkpoints
+  Material.setPbrMaterial(entity, { albedoColor: Color4.fromHexString('#FFD700') }) // Dorado
 
   return entity
 }
@@ -65,19 +99,19 @@ export function createCharacter(model: string, position: Vector3, scale?: Vector
   MeshCollider.setBox(characterEntity)
 
   // Añadir eventos de puntero al personaje
-  PointerEvents.create(characterEntity, {
-    pointerEvents: [
-      {
-        eventType: PointerEventType.PET_DOWN,
-        eventInfo: {
-          button: InputAction.IA_POINTER, // Botón izquierdo del ratón
-          hoverText: 'Hablar',
-          maxDistance: 15,
-          showFeedback: true
-        }
-      }
-    ]
-  })
+  // PointerEvents.create(characterEntity, {
+  //   pointerEvents: [
+  //     {
+  //       eventType: PointerEventType.PET_DOWN,
+  //       eventInfo: {
+  //         button: InputAction.IA_POINTER, // Botón izquierdo del ratón
+  //         hoverText: 'Hablar',
+  //         maxDistance: 15,
+  //         showFeedback: true
+  //       }
+  //     }
+  //   ]
+  // })
 
   addDialog(characterEntity, message)
 
@@ -85,7 +119,7 @@ export function createCharacter(model: string, position: Vector3, scale?: Vector
 }
 
 // Función para crear objetos recolectables
-export function createCollectible(id: string, model: string, position: Vector3): { id: string, entity: Entity } {
+export function createCollectible(id: string, model: string, position: Vector3): { id: string; entity: Entity } {
   const entity: Entity = engine.addEntity()
 
   GltfContainer.create(entity, {
@@ -113,7 +147,7 @@ function addDialog(characterEntity: Entity, message?: string) {
   Transform.create(plane, {
     position: Vector3.create(4, 3, 1),
     parent: characterEntity,
-    scale: { x: 5, y: 4, z: 10 },
+    scale: { x: 5, y: 4, z: 10 }
   })
 
   const sign = engine.addEntity()
@@ -121,13 +155,13 @@ function addDialog(characterEntity: Entity, message?: string) {
   Transform.create(sign, {
     position: Vector3.create(0, 0, -0.3),
     parent: plane,
-    rotation: Quaternion.create(0, 0, 0),
+    rotation: Quaternion.create(0, 0, 0)
   })
   TextShape.create(sign, {
     text: message,
     textColor: { r: 0, g: 0, b: 0, a: 1 },
     fontSize: 1,
-    font: Font.F_SANS_SERIF,
+    font: Font.F_SANS_SERIF
   })
 
   engine.addSystem(function () {
