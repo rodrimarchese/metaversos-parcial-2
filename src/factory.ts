@@ -13,11 +13,15 @@ import {
   Font,
   VisibilityComponent,
   Billboard,
-  BillboardMode
+  BillboardMode,
+  Animator
 } from '@dcl/sdk/ecs'
-import { Cube, RobotNPC, Spinner } from './components'
+import { Cube, Portal, RobotNPC, Spinner } from './components'
+import * as utils from '@dcl-sdk/utils'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { getRandomHexColor } from './utils'
+import { Collectible } from '.'
+import { movePlayerTo } from '~system/RestrictedActions'
 
 // Cube factory
 // Modificamos createCube para aceptar escala
@@ -64,7 +68,9 @@ export function createCheckpoint(
   z: number,
   scaleX: number,
   scaleY: number,
-  scaleZ: number
+  scaleZ: number,
+  checkpointMessage: string,
+  setCheckpoint: (x: number, y: number, z: number) => void,
 ): Entity {
   const entity = engine.addEntity()
 
@@ -78,48 +84,65 @@ export function createCheckpoint(
   // Aplicamos un color distintivo para los checkpoints
   Material.setPbrMaterial(entity, { albedoColor: Color4.fromHexString('#FFD700') }) // Dorado
 
+  createCharacter({
+    model: 'robot-hello',
+    position: Vector3.create(x + 0.5, y + 1.3, z + 0.5),
+    scale: Vector3.create(0.4, 0.4, 0.4),
+    message: checkpointMessage,
+  })
+
+  utils.triggers.addTrigger(
+    entity,
+    utils.NO_LAYERS,
+    1,
+    [
+      {
+        type: 'box',
+        scale: Vector3.create(1.5, 3, 1.5)
+      }
+    ],
+    () => {
+
+      setCheckpoint(x,y + 1,z)
+    }
+  )
+
   return entity
 }
 
+interface CreateNpcRobotArgs {
+  model: string
+  position: Vector3
+  scale?: Vector3
+  message?: string
+  parent?: Entity
+}
+
 // Función para crear el personaje
-export function createCharacter(model: string, position: Vector3, scale?: Vector3, message?: string): Entity {
+export function createCharacter(args: CreateNpcRobotArgs): Entity {
   const characterEntity: Entity = engine.addEntity()
 
   RobotNPC.create(characterEntity)
 
   GltfContainer.create(characterEntity, {
-    src: `models/${model}.glb`
+    src: `models/${args.model}.glb`
   })
 
   Transform.create(characterEntity, {
-    position: position,
-    scale: scale || Vector3.create(1, 1, 1)
+    position: args.position,
+    scale: args.scale || Vector3.create(1, 1, 1),
+    parent: args.parent
   })
 
   MeshCollider.setBox(characterEntity)
 
-  // Añadir eventos de puntero al personaje
-  // PointerEvents.create(characterEntity, {
-  //   pointerEvents: [
-  //     {
-  //       eventType: PointerEventType.PET_DOWN,
-  //       eventInfo: {
-  //         button: InputAction.IA_POINTER, // Botón izquierdo del ratón
-  //         hoverText: 'Hablar',
-  //         maxDistance: 15,
-  //         showFeedback: true
-  //       }
-  //     }
-  //   ]
-  // })
-
-  addDialog(characterEntity, message)
+  addDialog(characterEntity, args.message)
 
   return characterEntity
 }
 
 // Función para crear objetos recolectables
-export function createCollectible(id: string, model: string, position: Vector3): { id: string; entity: Entity } {
+export function createCollectible(id: string, model: string, position: Vector3): Collectible {
   const entity: Entity = engine.addEntity()
 
   GltfContainer.create(entity, {
@@ -147,7 +170,7 @@ function addDialog(characterEntity: Entity, message?: string) {
   Transform.create(plane, {
     position: Vector3.create(4, 3, 1),
     parent: characterEntity,
-    scale: { x: 5, y: 4, z: 10 }
+    scale: { x: 7, y: 4, z: 10 }
   })
 
   const sign = engine.addEntity()
@@ -155,13 +178,15 @@ function addDialog(characterEntity: Entity, message?: string) {
   Transform.create(sign, {
     position: Vector3.create(0, 0, -0.3),
     parent: plane,
-    rotation: Quaternion.create(0, 0, 0)
+    rotation: Quaternion.create(0, 0, 0),
+    scale: { x: 0.7, y: 0.9, z: 0.9 }
   })
   TextShape.create(sign, {
     text: message,
     textColor: { r: 0, g: 0, b: 0, a: 1 },
     fontSize: 1,
-    font: Font.F_SANS_SERIF
+    font: Font.F_SANS_SERIF,
+    textWrapping: true
   })
 
   engine.addSystem(function () {
@@ -182,4 +207,39 @@ function addDialog(characterEntity: Entity, message?: string) {
       visibilitySign.visible = false
     }
   })
+}
+
+export function createPortal(getCheckpoint: () => { x: number, y: number, z: number }) {
+  console.log('Creating portal');
+  
+  const portal = engine.addEntity()
+  Transform.create(portal, {
+    position: Vector3.create(-10, 2, -5),
+    scale: Vector3.create(3, 4, 1)
+  })
+  MeshRenderer.setSphere(portal)
+  Animator.create(portal, {
+    states: [{ clip: 'Expand', loop: false, shouldReset: true, playing: true }]
+  })
+  GltfContainer.create(portal, {
+    src: 'models/portalOrange.glb'
+  })
+
+  Portal.create(portal)
+
+  //trigger
+  utils.triggers.addTrigger(
+    portal,
+    utils.NO_LAYERS,
+    1,
+    [
+      {
+        type: 'box',
+        scale: Vector3.create(1.5, 3, 1.5)
+      }
+    ],
+    () => {
+      movePlayerTo({ newRelativePosition: getCheckpoint() })
+    }
+  )
 }

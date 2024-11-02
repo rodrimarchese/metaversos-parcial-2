@@ -10,3 +10,5 @@ export const Spinner = engine.defineComponent('spinner', { speed: Schemas.Number
 export const Cube = engine.defineComponent('cube-id', {})
 
 export const RobotNPC = engine.defineComponent('robot-npc', {})
+
+export const Portal = engine.defineComponent('portal', {})
