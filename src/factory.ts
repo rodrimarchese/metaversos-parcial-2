@@ -23,6 +23,9 @@ import { getRandomHexColor } from './utils'
 import { Collectible } from '.'
 import { movePlayerTo } from '~system/RestrictedActions'
 
+// Constante para el color azul marino oscuro
+const MARINE_BLUE = Color4.fromHexString('#000a78') // Azul marino oscuro
+
 // Cube factory
 // Modificamos createCube para aceptar escala
 export function createCube(
@@ -46,7 +49,11 @@ export function createCube(
   // Configuramos cómo se ve y colisiona el cubo
   MeshRenderer.setBox(entity)
   MeshCollider.setBox(entity)
-  Material.setPbrMaterial(entity, { albedoColor: Color4.fromHexString(getRandomHexColor()) })
+  Material.setPbrMaterial(entity, {
+    albedoColor: MARINE_BLUE,
+    metallic: 0.2,
+    roughness: 0.8
+  })
 
   // Make the cube spin, with the circularSystem
   // Spinner.create(entity, { speed: 100 * Math.random() })
@@ -71,24 +78,32 @@ export function createCheckpoint(
   scaleZ: number,
   checkpointMessage: string,
   setCheckpoint: (x: number, y: number, z: number) => void,
+  roundness: number = 0.1 // Factor de redondeo (0.1 = poco redondeado, 0.5 = muy redondeado)
 ): Entity {
   const entity = engine.addEntity()
 
   Transform.create(entity, {
     position: { x, y, z },
-    scale: { x: scaleX, y: scaleY, z: scaleZ }
+    scale: {
+      x: scaleX * (1 + roundness),
+      y: scaleY * (1 + roundness),
+      z: scaleZ * (1 + roundness)
+    }
   })
 
-  MeshRenderer.setBox(entity)
+  MeshRenderer.setSphere(entity)
   MeshCollider.setBox(entity)
-  // Aplicamos un color distintivo para los checkpoints
-  Material.setPbrMaterial(entity, { albedoColor: Color4.fromHexString('#FFD700') }) // Dorado
+  Material.setPbrMaterial(entity, {
+    albedoColor: MARINE_BLUE,
+    metallic: 0.2,
+    roughness: 0.8
+  })
 
   createCharacter({
     model: 'robot-hello',
     position: Vector3.create(x + 0.5, y + 1.3, z + 0.5),
     scale: Vector3.create(0.4, 0.4, 0.4),
-    message: checkpointMessage,
+    message: checkpointMessage
   })
 
   utils.triggers.addTrigger(
@@ -102,8 +117,7 @@ export function createCheckpoint(
       }
     ],
     () => {
-
-      setCheckpoint(x,y + 1,z)
+      setCheckpoint(x, y + 1, z)
     }
   )
 
@@ -209,9 +223,9 @@ function addDialog(characterEntity: Entity, message?: string) {
   })
 }
 
-export function createPortal(getCheckpoint: () => { x: number, y: number, z: number }) {
-  console.log('Creating portal');
-  
+export function createPortal(getCheckpoint: () => { x: number; y: number; z: number }) {
+  console.log('Creating portal')
+
   const portal = engine.addEntity()
   Transform.create(portal, {
     position: Vector3.create(-10, 2, -5),
@@ -242,4 +256,46 @@ export function createPortal(getCheckpoint: () => { x: number, y: number, z: num
       movePlayerTo({ newRelativePosition: getCheckpoint() })
     }
   )
+}
+
+// Constantes para los colores
+// quiero el marine blue un poco mas oscuro
+const DARK_MARINE_BLUE = Color4.fromHexString('#000a78') // Azul marino oscuro
+const WHITE = Color4.fromHexString('#FFFFFF') // Blanco
+
+export function createRoundedCube(
+  x: number,
+  y: number,
+  z: number,
+  scaleX: number = 1,
+  scaleY: number = 0.5,
+  scaleZ: number = 1,
+  roundness: number = 0.1 // Factor de redondeo (0.1 = poco redondeado, 0.5 = muy redondeado)
+): Entity {
+  const entity = engine.addEntity()
+
+  Cube.create(entity)
+
+  Transform.create(entity, {
+    position: { x, y, z },
+    scale: {
+      x: scaleX * (1 + roundness),
+      y: scaleY * (1 + roundness),
+      z: scaleZ * (1 + roundness)
+    }
+  })
+
+  // Alternamos entre celeste y blanco usando el índice de la posición
+  const isMarineBlue = Math.round(x + z) % 2 === 0
+  const color = isMarineBlue ? DARK_MARINE_BLUE : WHITE
+
+  MeshRenderer.setSphere(entity)
+  MeshCollider.setBox(entity)
+  Material.setPbrMaterial(entity, {
+    albedoColor: color,
+    metallic: 0.2, // Añadimos un poco de brillo metálico
+    roughness: 0.8 // Hacemos la superficie un poco más suave
+  })
+
+  return entity
 }

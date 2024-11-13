@@ -9,7 +9,14 @@ import {
   robotNpcFacePlayerSystem
 } from './systems'
 import { setupUi, showDialogUI } from './ui' // Importamos showDialogUI
-import { createCharacter, createCheckpoint, createCollectible, createCube, createPortal } from './factory'
+import {
+  createCharacter,
+  createCheckpoint,
+  createCollectible,
+  createCube,
+  createPortal,
+  createRoundedCube
+} from './factory'
 
 // Definir una interfaz para los objetos recolectables
 export interface Collectible {
@@ -19,7 +26,7 @@ export interface Collectible {
 
 let currentCheckpoint = { x: 0, y: 0, z: 0 }
 function setCheckpoint(x: number, y: number, z: number) {
-  console.log('Checkpoint reached at', x, y, z);
+  console.log('Checkpoint reached at', x, y, z)
   currentCheckpoint = { x, y, z }
 }
 
@@ -36,19 +43,17 @@ function addCollectible(collectible: Collectible) {
   collectibles.push(collectible)
 }
 
- 
-
 export function main() {
   let characterEntity: Entity
 
   // Crear el NPC
-  characterEntity = createCharacter(
-    {
-      model: 'robot-hello',
-      position: Vector3.create(1, 1, -1.7),
-      scale: Vector3.create(0.4, 0.4, 0.4),
-      message: '¡Se nos perdieron nuestras cosas!\n¿Podrías ayudarnos a encontrarlas?\nDeberían estar en las plataformas...'
-    })
+  characterEntity = createCharacter({
+    model: 'robot-hello',
+    position: Vector3.create(1, 1, -1.7),
+    scale: Vector3.create(0.4, 0.4, 0.4),
+    message:
+      '¡Se nos perdieron nuestras cosas!\n¿Podrías ayudarnos a encontrarlas?\nDeberían estar en las plataformas...'
+  })
 
   createPortal(getCheckpoint)
 
@@ -84,7 +89,17 @@ function createParkourPath(addCollectible: (collectible: Collectible) => void) {
     { x: 11, y: 2, z: 11, scaleX: 2, scaleY: 0.5, scaleZ: 2 },
     { x: 14, y: 2.5, z: 16, scaleX: 2, scaleY: 0.5, scaleZ: 2 },
     // Checkpoint después del primer grupo
-    { x: 17, y: 3, z: 20, scaleX: 5, scaleY: 0.5, scaleZ: 5, isCheckpoint: true, collectible: { id: "pc1", model: "pc" }, checkpointMessage: '¡Encontraste la computadora!\nSigue adelante!' },
+    {
+      x: 17,
+      y: 3,
+      z: 20,
+      scaleX: 5,
+      scaleY: 0.5,
+      scaleZ: 5,
+      isCheckpoint: true,
+      collectible: { id: 'pc1', model: 'pc' },
+      checkpointMessage: '¡Encontraste la computadora!\nSigue adelante!'
+    },
     // Segundo grupo de 5 plataformas con orientación diferente
     { x: 14, y: 3.5, z: 24, scaleX: 1.5, scaleY: 0.5, scaleZ: 1.5 },
     { x: 11, y: 4, z: 28, scaleX: 1.5, scaleY: 0.5, scaleZ: 1.5 },
@@ -109,19 +124,34 @@ function createParkourPath(addCollectible: (collectible: Collectible) => void) {
     { x: -4, y: 11.5, z: -14, scaleX: 0.8, scaleY: 0.5, scaleZ: 0.8 },
     // Checkpoint final
     { x: -1, y: 12, z: -18, scaleX: 5, scaleY: 0.5, scaleZ: 5, isCheckpoint: true }
-  ];
-
+  ]
 
   // Creamos cada plataforma con posición y tamaño específicos
   for (let i = 0; i < platforms.length; i++) {
     const platform = platforms[i]
     // Si es un checkpoint, aplicamos un material diferente
     if (platform.isCheckpoint) {
-      createCheckpoint(platform.x, platform.y, platform.z, platform.scaleX, platform.scaleY, platform.scaleZ, platform.checkpointMessage || "¡Checkpoint!", setCheckpoint)
+      createCheckpoint(
+        platform.x,
+        platform.y,
+        platform.z,
+        platform.scaleX,
+        platform.scaleY,
+        platform.scaleZ,
+        platform.checkpointMessage || '¡Checkpoint!',
+        setCheckpoint
+      )
       if (platform.collectible)
-        addCollectible(createCollectible(platform.collectible.id, platform.collectible.model, Vector3.create(platform.x, platform.y + 0.8, platform.z + 1)))
+        addCollectible(
+          createCollectible(
+            platform.collectible.id,
+            platform.collectible.model,
+            Vector3.create(platform.x, platform.y + 0.8, platform.z + 1)
+          )
+        )
     } else {
-      createCube(platform.x, platform.y, platform.z, platform.scaleX, platform.scaleY, platform.scaleZ)
+      // createCube(platform.x, platform.y, platform.z, platform.scaleX, platform.scaleY, platform.scaleZ)
+      createRoundedCube(platform.x, platform.y, platform.z, platform.scaleX, platform.scaleY, platform.scaleZ)
     }
   }
 }
