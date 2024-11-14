@@ -10,12 +10,15 @@ import {
   Entity,
   UiText,
   PointerEventsResult,
+  MeshRenderer,
+  UiTransform,
+  TextAlignMode
 } from '@dcl/sdk/ecs'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { Cube, RobotNPC, Spinner } from './components'
 import { getRandomHexColor } from './utils'
 import { Collectible } from '.'
-
+import { createCharacter } from './factory'
 
 /**
  * All cubes rotating behavior
@@ -115,9 +118,10 @@ function allCollectiblesCollected() {
   const messageEntity = engine.addEntity()
 
   UiText.create(messageEntity, {
-    value: `🎉 ¡Felicidades! Has recolectado todos los objetos. 🎉`,
-    fontSize: 50,
-    color: Color4.Yellow()
+    value: `🎉 ¡Felicidades! Encontraste todas las PCs perdidas! 🎉`,
+    fontSize: 35,
+    color: Color4.Blue(),
+    textAlign: TextAlignMode.TAM_BOTTOM_CENTER
   })
 
   let elapsedTime = 0
@@ -140,19 +144,25 @@ function allCollectiblesCollected() {
 function addAvocadoHat() {
   const playerEntity = engine.PlayerEntity
 
-  // Crear una nueva entidad para el aguacate
-  const avocadoHatEntity: Entity = engine.addEntity()
+  const qrPlane = engine.addEntity()
+  Transform.create(qrPlane, {
+    position: Vector3.create(-7.5, 2.5, 0.5),
+    scale: Vector3.create(-3.5, 4, -1.5)
+  })
+  MeshRenderer.setPlane(qrPlane)
 
-  // Agregar el modelo del aguacate
-  GltfContainer.create(avocadoHatEntity, {
-    src: 'models/avocado.glb',
-    invisibleMeshesCollisionMask: 0
+  Material.setPbrMaterial(qrPlane, {
+    texture: Material.Texture.Common({
+      src: 'images/ltm-qr-2.png'
+    })
   })
 
-  // Configurar la posición, escala y establecer el padre en el Transform
-  Transform.create(avocadoHatEntity, {
-    position: Vector3.create(0, 0.7, -0.25), // Ajusta la posición vertical según sea necesario
-    scale: Vector3.create(0.5, 0.5, 0.5), // Ajusta la escala para que se vea bien
-    parent: playerEntity // Establecer el jugador como entidad padre
+  createCharacter({
+    model: 'robot-hello',
+    position: Vector3.create(-4, 1, 2.5),
+    scale: Vector3.create(0.4, 0.4, 0.4),
+    message:
+      'Felicidades por tu trabajo! Ya podes escanear el QR para entrar a LTM Software y empezar a trabajar juntos!',
+    alwaysVisible: true
   })
 }

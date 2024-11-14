@@ -130,6 +130,7 @@ interface CreateNpcRobotArgs {
   scale?: Vector3
   message?: string
   parent?: Entity
+  alwaysVisible?: boolean
 }
 
 // Función para crear el personaje
@@ -147,16 +148,17 @@ export function createCharacter(args: CreateNpcRobotArgs): Entity {
     scale: args.scale || Vector3.create(1, 1, 1),
     parent: args.parent
   })
+  VisibilityComponent.create(characterEntity, { visible: true })
 
   MeshCollider.setBox(characterEntity)
 
-  addDialog(characterEntity, args.message)
+  addDialog(characterEntity, !!args.alwaysVisible, args.message)
 
   return characterEntity
 }
 
 // Función para crear objetos recolectables
-export function createCollectible(id: string, model: string, position: Vector3): Collectible {
+export function createCollectible(id: string, model: string, position: Vector3, scale?: Vector3): Collectible {
   const entity: Entity = engine.addEntity()
 
   GltfContainer.create(entity, {
@@ -165,7 +167,7 @@ export function createCollectible(id: string, model: string, position: Vector3):
 
   Transform.create(entity, {
     position: position,
-    scale: Vector3.create(0.65, 0.65, 0.65) // Ajusta la escala para que se vea bien
+    scale: scale || Vector3.create(0.65, 0.65, 0.65) // Ajusta la escala para que se vea bien
   })
 
   Spinner.create(entity, { speed: 100 })
@@ -174,7 +176,7 @@ export function createCollectible(id: string, model: string, position: Vector3):
   return { id, entity }
 }
 
-function addDialog(characterEntity: Entity, message?: string) {
+function addDialog(characterEntity: Entity, alwaysVisible: boolean, message?: string) {
   if (!message) return
 
   const plane = engine.addEntity()
@@ -182,7 +184,7 @@ function addDialog(characterEntity: Entity, message?: string) {
   VisibilityComponent.create(plane, { visible: true })
   Billboard.create(plane, { billboardMode: BillboardMode.BM_ALL })
   Transform.create(plane, {
-    position: Vector3.create(4, 3, 1),
+    position: Vector3.create(5, 3, 2),
     parent: characterEntity,
     scale: { x: 7, y: 4, z: 10 }
   })
@@ -212,13 +214,17 @@ function addDialog(characterEntity: Entity, message?: string) {
     const distance = Vector3.distance(playerPosition, npcPosition)
     const visibilityPlane = VisibilityComponent.getMutable(plane)
     const visibilitySign = VisibilityComponent.getMutable(sign)
+    const visibilityRobotCharacter = VisibilityComponent.getMutable(characterEntity)
 
-    if (distance < 5) {
+    if (distance < 8) {
       visibilityPlane.visible = true
       visibilitySign.visible = true
+      visibilityRobotCharacter.visible = true
     } else {
       visibilityPlane.visible = false
       visibilitySign.visible = false
+      if (!alwaysVisible)
+        visibilityRobotCharacter.visible = false
     }
   })
 }
@@ -228,7 +234,7 @@ export function createPortal(getCheckpoint: () => { x: number; y: number; z: num
 
   const portal = engine.addEntity()
   Transform.create(portal, {
-    position: Vector3.create(-10, 2, -5),
+    position: Vector3.create(-9, 2, 16),
     scale: Vector3.create(3, 4, 1)
   })
   MeshRenderer.setSphere(portal)
@@ -240,6 +246,33 @@ export function createPortal(getCheckpoint: () => { x: number; y: number; z: num
   })
 
   Portal.create(portal)
+
+  const plane = engine.addEntity()
+  MeshRenderer.setPlane(plane)
+  VisibilityComponent.create(plane, { visible: true })
+  Billboard.create(plane, { billboardMode: BillboardMode.BM_ALL })
+  Transform.create(plane, {
+    position: Vector3.create(1, 0.3, 0),
+    parent: portal,
+    scale: { x: 1, y: 0.2, z: 1.5 }
+  })
+
+  const sign = engine.addEntity()
+  VisibilityComponent.create(sign, { visible: true })
+  Transform.create(sign, {
+    position: Vector3.create(0, 0.2, -0.3),
+    parent: plane,
+    rotation: Quaternion.create(0, 0, 0),
+    scale: { x: 1, y: 1.5, z: 1 }
+  })
+  TextShape.create(sign, {
+    text: "Ir al Checkpoint",
+    textColor: { r: 0, g: 0, b: 0, a: 1 },
+    fontSize: 1,
+    font: Font.F_SANS_SERIF,
+    textWrapping: true
+  })
+
 
   //trigger
   utils.triggers.addTrigger(
@@ -296,6 +329,47 @@ export function createRoundedCube(
     metallic: 0.2, // Añadimos un poco de brillo metálico
     roughness: 0.8 // Hacemos la superficie un poco más suave
   })
+
+  return entity
+}
+
+export function createWall(
+  x: number,
+  y: number,
+  z: number,
+  width: number = 10,
+  height: number = 5,
+  depth: number = 0.5
+): Entity {
+  const entity = engine.addEntity()
+
+  Transform.create(entity, {
+    position: { x, y, z },
+    scale: { x: width, y: height, z: depth }
+  })
+
+  MeshRenderer.setBox(entity)
+  MeshCollider.setBox(entity)
+  Material.setPbrMaterial(entity, {
+    albedoColor: MARINE_BLUE,
+    metallic: 0.2,
+    roughness: 0.8
+  })
+
+  const logoLtm = engine.addEntity()
+  Transform.create(logoLtm, {
+    position: Vector3.create(-5.5, 2.5, -0.3),
+    scale: Vector3.create(3.5, 4, -1.5)
+  })
+  MeshRenderer.setPlane(logoLtm)
+
+  Material.setPbrMaterial(logoLtm, {
+    texture: Material.Texture.Common({
+      src: 'images/logo-ltm.png'
+    })
+  })
+
+
 
   return entity
 }

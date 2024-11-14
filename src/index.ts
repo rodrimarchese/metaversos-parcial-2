@@ -15,7 +15,8 @@ import {
   createCollectible,
   createCube,
   createPortal,
-  createRoundedCube
+  createRoundedCube,
+  createWall
 } from './factory'
 
 // Definir una interfaz para los objetos recolectables
@@ -44,23 +45,27 @@ function addCollectible(collectible: Collectible) {
 }
 
 export function main() {
+  // Agregar la pared inicial
+  createWall(
+    -7, // x - posición en el centro
+    2.5, // y - altura (la mitad de la altura total)
+    0, // z - un poco delante del punto de inicio
+    10, // width - ancho de la pared
+    5, // height - altura de la pared
+    0.5 // depth - grosor de la pared
+  )
+
   let characterEntity: Entity
 
   // Crear el NPC
   characterEntity = createCharacter({
     model: 'robot-hello',
-    position: Vector3.create(1, 1, -1.7),
+    position: Vector3.create(-9, 1, -2),
     scale: Vector3.create(0.4, 0.4, 0.4),
-    message:
-      '¡Se nos perdieron nuestras cosas!\n¿Podrías ayudarnos a encontrarlas?\nDeberían estar en las plataformas...'
+    message: 'Para entrar a LTM Software, debes ayudarnos a encontrar las PCs perdidas...'
   })
 
   createPortal(getCheckpoint)
-
-  // Crear tres objetos recolectables con identificadores únicos
-  addCollectible(createCollectible('test-pc1', 'pc', Vector3.create(3, 1, 3)))
-  addCollectible(createCollectible('avocado', 'avocado', Vector3.create(6, 1, 3)))
-  addCollectible(createCollectible('test-pc2', 'pc', Vector3.create(9, 1, 3)))
 
   createParkourPath(addCollectible)
 
@@ -107,23 +112,43 @@ function createParkourPath(addCollectible: (collectible: Collectible) => void) {
     { x: 5, y: 5, z: 33, scaleX: 1.5, scaleY: 0.5, scaleZ: 1.5 },
     { x: 2, y: 5.5, z: 34, scaleX: 1.5, scaleY: 0.5, scaleZ: 1.5 },
     // Checkpoint después del segundo grupo
-    { x: -1, y: 6, z: 35, scaleX: 5, scaleY: 0.5, scaleZ: 5, isCheckpoint: true },
+    {
+      x: -1,
+      y: 6,
+      z: 35,
+      scaleX: 5,
+      scaleY: 0.5,
+      scaleZ: 5,
+      isCheckpoint: true,
+      collectible: { id: 'pc2', model: 'pc' },
+      checkpointMessage: '¡Encontraste la computadora!\nSigue adelante!'
+    },
     // Tercer grupo de 5 plataformas con cambio de dirección
-    { x: -4, y: 6.5, z: 32, scaleX: 1, scaleY: 0.5, scaleZ: 1 },
-    { x: -7, y: 7, z: 29, scaleX: 1, scaleY: 0.5, scaleZ: 1 },
-    { x: -10, y: 7.5, z: 25, scaleX: 1, scaleY: 0.5, scaleZ: 1 },
-    { x: -13, y: 8, z: 20, scaleX: 1, scaleY: 0.5, scaleZ: 1 },
-    { x: -16, y: 8.5, z: 14, scaleX: 1, scaleY: 0.5, scaleZ: 1 },
+    { x: -4, y: 6.5, z: 32, scaleX: 1.4, scaleY: 0.5, scaleZ: 1.4 },
+    { x: -7, y: 7, z: 29, scaleX: 1.4, scaleY: 0.5, scaleZ: 1.4 },
+    { x: -10, y: 7.5, z: 25, scaleX: 1.4, scaleY: 0.5, scaleZ: 1.4 },
+    { x: -13, y: 8, z: 20, scaleX: 1.4, scaleY: 0.5, scaleZ: 1.4 },
+    { x: -16, y: 8.5, z: 15, scaleX: 1.4, scaleY: 0.5, scaleZ: 1.4 },
     // Checkpoint después del tercer grupo
-    { x: -19, y: 9, z: 8, scaleX: 5, scaleY: 0.5, scaleZ: 5, isCheckpoint: true },
-    // Último grupo de plataformas pequeñas
-    { x: -16, y: 9.5, z: 2, scaleX: 0.8, scaleY: 0.5, scaleZ: 0.8 },
-    { x: -13, y: 10, z: -2, scaleX: 0.8, scaleY: 0.5, scaleZ: 0.8 },
-    { x: -10, y: 10.5, z: -6, scaleX: 0.8, scaleY: 0.5, scaleZ: 0.8 },
-    { x: -7, y: 11, z: -10, scaleX: 0.8, scaleY: 0.5, scaleZ: 0.8 },
-    { x: -4, y: 11.5, z: -14, scaleX: 0.8, scaleY: 0.5, scaleZ: 0.8 },
-    // Checkpoint final
-    { x: -1, y: 12, z: -18, scaleX: 5, scaleY: 0.5, scaleZ: 5, isCheckpoint: true }
+    {
+      x: -19,
+      y: 9,
+      z: 8,
+      scaleX: 5,
+      scaleY: 0.5,
+      scaleZ: 5,
+      isCheckpoint: true,
+      collectible: { id: 'pc3', model: 'pc' },
+      checkpointMessage: '¡Encontraste todas las computadoras!\nAhora podes acceder a la emrpesa!!'
+    }
+    // // Último grupo de plataformas pequeñas
+    // { x: -16, y: 9.5, z: 2, scaleX: 1, scaleY: 0.5, scaleZ: 0.8 },
+    // { x: -13, y: 10, z: -2, scaleX: 1, scaleY: 0.5, scaleZ: 0.8 },
+    // { x: -10, y: 10.5, z: -6, scaleX: 1, scaleY: 0.5, scaleZ: 0.8 },
+    // { x: -7, y: 11, z: -10, scaleX: 1, scaleY: 0.5, scaleZ: 0.8 },
+    // { x: -4, y: 11.5, z: -14, scaleX: 1, scaleY: 0.5, scaleZ: 0.8 },
+    // // Checkpoint final
+    // { x: -1, y: 12, z: -18, scaleX: 5, scaleY: 0.5, scaleZ: 5, isCheckpoint: true }
   ]
 
   // Creamos cada plataforma con posición y tamaño específicos
@@ -146,7 +171,8 @@ function createParkourPath(addCollectible: (collectible: Collectible) => void) {
           createCollectible(
             platform.collectible.id,
             platform.collectible.model,
-            Vector3.create(platform.x, platform.y + 0.8, platform.z + 1)
+            Vector3.create(platform.x - 1, platform.y + 0.8, platform.z + 1),
+            Vector3.create(3, 3, 3)
           )
         )
     } else {
