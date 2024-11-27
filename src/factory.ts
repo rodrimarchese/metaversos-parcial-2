@@ -18,7 +18,7 @@ import {
 } from '@dcl/sdk/ecs'
 import { Cube, Portal, RobotNPC, Spinner } from './components'
 import * as utils from '@dcl-sdk/utils'
-import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
+import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { getRandomHexColor } from './utils'
 import { Collectible } from '.'
 import { movePlayerTo } from '~system/RestrictedActions'
@@ -77,6 +77,8 @@ export function createCheckpoint(
   scaleY: number,
   scaleZ: number,
   checkpointMessage: string,
+  currentCheckpointRobot: number,
+  getCurrentRobotNumber: () => number,
   setCheckpoint: (x: number, y: number, z: number) => void,
   roundness: number = 0.1 // Factor de redondeo (0.1 = poco redondeado, 0.5 = muy redondeado)
 ): Entity {
@@ -103,7 +105,9 @@ export function createCheckpoint(
     model: 'robot-hello',
     position: Vector3.create(x + 0.5, y + 1.3, z + 0.5),
     scale: Vector3.create(0.4, 0.4, 0.4),
-    message: checkpointMessage
+    message: checkpointMessage,
+    robotNumber: currentCheckpointRobot,
+    getCurrentRobotNumber
   })
 
   utils.triggers.addTrigger(
@@ -127,6 +131,8 @@ export function createCheckpoint(
 interface CreateNpcRobotArgs {
   model: string
   position: Vector3
+  robotNumber: number,
+  getCurrentRobotNumber: () => number,
   scale?: Vector3
   message?: string
   parent?: Entity
@@ -152,7 +158,7 @@ export function createCharacter(args: CreateNpcRobotArgs): Entity {
 
   MeshCollider.setBox(characterEntity)
 
-  addDialog(characterEntity, !!args.alwaysVisible, args.message)
+  addDialog(characterEntity, !!args.alwaysVisible, args.robotNumber, args.getCurrentRobotNumber, args.message)
 
   return characterEntity
 }
@@ -176,7 +182,7 @@ export function createCollectible(id: string, model: string, position: Vector3, 
   return { id, entity }
 }
 
-function addDialog(characterEntity: Entity, alwaysVisible: boolean, message?: string) {
+function addDialog(characterEntity: Entity, alwaysVisible: boolean, robotNumber: number, getCurrentRobotNumber: () => number ,message?: string) {
   if (!message) return
 
   const plane = engine.addEntity()
@@ -216,15 +222,19 @@ function addDialog(characterEntity: Entity, alwaysVisible: boolean, message?: st
     const visibilitySign = VisibilityComponent.getMutable(sign)
     const visibilityRobotCharacter = VisibilityComponent.getMutable(characterEntity)
 
+    if (getCurrentRobotNumber() === robotNumber) {
+      visibilityRobotCharacter.visible = true
+    } else {
+      if(!alwaysVisible) visibilityRobotCharacter.visible = false
+    }      
+
     if (distance < 8) {
       visibilityPlane.visible = true
       visibilitySign.visible = true
-      visibilityRobotCharacter.visible = true
     } else {
       visibilityPlane.visible = false
       visibilitySign.visible = false
-      if (!alwaysVisible)
-        visibilityRobotCharacter.visible = false
+      if (!alwaysVisible) visibilityRobotCharacter.visible = false
     }
   })
 }
@@ -266,13 +276,12 @@ export function createPortal(getCheckpoint: () => { x: number; y: number; z: num
     scale: { x: 1, y: 1.5, z: 1 }
   })
   TextShape.create(sign, {
-    text: "Ir al Checkpoint",
+    text: 'Ir al Checkpoint',
     textColor: { r: 0, g: 0, b: 0, a: 1 },
     fontSize: 1,
     font: Font.F_SANS_SERIF,
     textWrapping: true
   })
-
 
   //trigger
   utils.triggers.addTrigger(
@@ -303,7 +312,10 @@ export function createRoundedCube(
   scaleX: number = 1,
   scaleY: number = 0.5,
   scaleZ: number = 1,
-  roundness: number = 0.1 // Factor de redondeo (0.1 = poco redondeado, 0.5 = muy redondeado)
+  isTrigger?: boolean,
+  robotPositionIndex?: number,
+  setRobotNumber?: (robotNumber: number) => void,
+  roundness: number = 0.1, // Factor de redondeo (0.1 = poco redondeado, 0.5 = muy redondeado)
 ): Entity {
   const entity = engine.addEntity()
 
@@ -329,6 +341,28 @@ export function createRoundedCube(
     metallic: 0.2, // Añadimos un poco de brillo metálico
     roughness: 0.8 // Hacemos la superficie un poco más suave
   })
+  utils.triggers.enableDebugDraw(true)
+  if (isTrigger) {
+    utils.triggers.addTrigger(
+      entity,
+      utils.NO_LAYERS,
+      1,
+      [
+        {
+          type: 'box',
+          scale: Vector3.create(scaleX *(-2) *(1 + roundness), scaleY * (-2) * (1 + roundness), scaleZ * (-2) * (1 + roundness)),
+          position: Vector3.create(-2, 4, -3)
+        }
+      ],
+      () => {
+        console.log('Moving robot to position', robotPositionIndex)
+        if(setRobotNumber) setRobotNumber(robotPositionIndex!)
+      },
+      () => {},
+      Color3.create(1,0,0),
+
+    )
+  }
 
   return entity
 }
@@ -368,8 +402,6 @@ export function createWall(
       src: 'images/logo-ltm.png'
     })
   })
-
-
 
   return entity
 }

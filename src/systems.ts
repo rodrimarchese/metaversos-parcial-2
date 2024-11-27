@@ -164,5 +164,7 @@ function addAvocadoHat() {
     message:
       'Felicidades por tu trabajo! Ya podes escanear el QR para entrar a LTM Software y empezar a trabajar juntos!',
     alwaysVisible: true
+    robotNumber: 4,
+    getCurrentRobotNumber: () => 4
   })
 }

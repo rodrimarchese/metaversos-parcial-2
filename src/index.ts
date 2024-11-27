@@ -30,10 +30,18 @@ function setCheckpoint(x: number, y: number, z: number) {
   console.log('Checkpoint reached at', x, y, z)
   currentCheckpoint = { x, y, z }
 }
-
 function getCheckpoint() {
   return currentCheckpoint
 }
+
+let currentRobotNumber = 0
+function setRobotNumber(robotNumber: number) {
+  currentRobotNumber = robotNumber
+}
+function getRobotNumber() {
+  return currentRobotNumber
+}
+
 // Lista de todos los objetos recolectables
 let collectibles: Collectible[] = []
 
@@ -62,7 +70,9 @@ export function main() {
     model: 'robot-hello',
     position: Vector3.create(-9, 1, -2),
     scale: Vector3.create(0.4, 0.4, 0.4),
-    message: 'Para entrar a LTM Software, debes ayudarnos a encontrar las PCs perdidas...'
+    message: 'Para entrar a LTM Software, debes ayudarnos a encontrar las PCs perdidas...',
+    robotNumber: 0,
+    getCurrentRobotNumber: getRobotNumber,
   })
 
   createPortal(getCheckpoint)
@@ -88,7 +98,7 @@ function createParkourPath(addCollectible: (collectible: Collectible) => void) {
   // Definimos las posiciones y tamaños de las plataformas con checkpoints
   const platforms = [
     // Primer grupo de 5 plataformas
-    { x: 2, y: 0.5, z: 2, scaleX: 2, scaleY: 0.5, scaleZ: 2 },
+    { x: 2, y: 0.5, z: 2, scaleX: 2, scaleY: 0.5, scaleZ: 2, isTrigger: true, nextPlatform: 1 },
     { x: 5, y: 1, z: 4, scaleX: 2, scaleY: 0.5, scaleZ: 2 },
     { x: 8, y: 1.5, z: 7, scaleX: 2, scaleY: 0.5, scaleZ: 2 },
     { x: 11, y: 2, z: 11, scaleX: 2, scaleY: 0.5, scaleZ: 2 },
@@ -106,7 +116,7 @@ function createParkourPath(addCollectible: (collectible: Collectible) => void) {
       checkpointMessage: '¡Encontraste la computadora!\nSigue adelante!'
     },
     // Segundo grupo de 5 plataformas con orientación diferente
-    { x: 14, y: 3.5, z: 24, scaleX: 1.5, scaleY: 0.5, scaleZ: 1.5 },
+    { x: 14, y: 3.5, z: 24, scaleX: 1.5, scaleY: 0.5, scaleZ: 1.5, isTrigger: true, nextPlatform: 2 },
     { x: 11, y: 4, z: 28, scaleX: 1.5, scaleY: 0.5, scaleZ: 1.5 },
     { x: 8, y: 4.5, z: 31, scaleX: 1.5, scaleY: 0.5, scaleZ: 1.5 },
     { x: 5, y: 5, z: 33, scaleX: 1.5, scaleY: 0.5, scaleZ: 1.5 },
@@ -124,7 +134,7 @@ function createParkourPath(addCollectible: (collectible: Collectible) => void) {
       checkpointMessage: '¡Encontraste la computadora!\nSigue adelante!'
     },
     // Tercer grupo de 5 plataformas con cambio de dirección
-    { x: -4, y: 6.5, z: 32, scaleX: 1.4, scaleY: 0.5, scaleZ: 1.4 },
+    { x: -4, y: 6.5, z: 32, scaleX: 1.4, scaleY: 0.5, scaleZ: 1.4, isTrigger: true, nextPlatform: 3 },
     { x: -7, y: 7, z: 29, scaleX: 1.4, scaleY: 0.5, scaleZ: 1.4 },
     { x: -10, y: 7.5, z: 25, scaleX: 1.4, scaleY: 0.5, scaleZ: 1.4 },
     { x: -13, y: 8, z: 20, scaleX: 1.4, scaleY: 0.5, scaleZ: 1.4 },
@@ -151,9 +161,17 @@ function createParkourPath(addCollectible: (collectible: Collectible) => void) {
     // { x: -1, y: 12, z: -18, scaleX: 5, scaleY: 0.5, scaleZ: 5, isCheckpoint: true }
   ]
 
+  const robotCoordinatesInPath = {
+    1: { x: 17.5, y: 4.3, z: 20.5 },
+    2: { x: -0.5, y: 7.3, z: 35.5 },
+    3: { x: -18.5, y: 10.3, z: 8.5 }
+  }
+
   // Creamos cada plataforma con posición y tamaño específicos
+  let currentCheckpointRobot = 1
   for (let i = 0; i < platforms.length; i++) {
     const platform = platforms[i]
+  
     // Si es un checkpoint, aplicamos un material diferente
     if (platform.isCheckpoint) {
       createCheckpoint(
@@ -164,8 +182,11 @@ function createParkourPath(addCollectible: (collectible: Collectible) => void) {
         platform.scaleY,
         platform.scaleZ,
         platform.checkpointMessage || '¡Checkpoint!',
-        setCheckpoint
+        currentCheckpointRobot,
+        getRobotNumber,
+        setCheckpoint,
       )
+      currentCheckpointRobot++
       if (platform.collectible)
         addCollectible(
           createCollectible(
@@ -177,7 +198,7 @@ function createParkourPath(addCollectible: (collectible: Collectible) => void) {
         )
     } else {
       // createCube(platform.x, platform.y, platform.z, platform.scaleX, platform.scaleY, platform.scaleZ)
-      createRoundedCube(platform.x, platform.y, platform.z, platform.scaleX, platform.scaleY, platform.scaleZ)
+      createRoundedCube(platform.x, platform.y, platform.z, platform.scaleX, platform.scaleY, platform.scaleZ, platform.isTrigger, platform.nextPlatform, setRobotNumber)
     }
   }
 }
