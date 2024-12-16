@@ -17,8 +17,9 @@ import {
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { Cube, RobotNPC, Spinner } from './components'
 import { getRandomHexColor } from './utils'
-import { Collectible } from '.'
-import { createCharacter } from './factory'
+import { Collectible, setRobotNumber } from '.'
+import { createCharacter, createLandingPlatform } from './factory'
+
 
 /**
  * All cubes rotating behavior
@@ -156,15 +157,5 @@ function addAvocadoHat() {
       src: 'images/ltm-qr-2.png'
     })
   })
-
-  createCharacter({
-    model: 'robot-hello',
-    position: Vector3.create(-4, 1, 2.5),
-    scale: Vector3.create(0.4, 0.4, 0.4),
-    message:
-      'Felicidades por tu trabajo! Ya podes escanear el QR para entrar a LTM Software y empezar a trabajar juntos!',
-    alwaysVisible: true
-    robotNumber: 4,
-    getCurrentRobotNumber: () => 4
-  })
+  createLandingPlatform(setRobotNumber)
 }

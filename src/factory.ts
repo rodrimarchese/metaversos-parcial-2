@@ -18,7 +18,7 @@ import {
 } from '@dcl/sdk/ecs'
 import { Cube, Portal, RobotNPC, Spinner } from './components'
 import * as utils from '@dcl-sdk/utils'
-import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
+import { Color3, Color4, Plane, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { getRandomHexColor } from './utils'
 import { Collectible } from '.'
 import { movePlayerTo } from '~system/RestrictedActions'
@@ -54,18 +54,6 @@ export function createCube(
     metallic: 0.2,
     roughness: 0.8
   })
-
-  // Make the cube spin, with the circularSystem
-  // Spinner.create(entity, { speed: 100 * Math.random() })
-
-  // Create PointerEvent with the hover feedback.
-  // We are going to check the onClick event on the changeColorSystem.
-  // PointerEvents.create(entity, {
-  //   pointerEvents: [
-  //     { eventType: PointerEventType.PET_DOWN, eventInfo: { button: InputAction.IA_POINTER, hoverText: 'Change Color' } }
-  //   ]
-  // })
-
   return entity
 }
 
@@ -154,7 +142,7 @@ export function createCharacter(args: CreateNpcRobotArgs): Entity {
     scale: args.scale || Vector3.create(1, 1, 1),
     parent: args.parent
   })
-  VisibilityComponent.create(characterEntity, { visible: true })
+  VisibilityComponent.create(characterEntity, { visible: false })
 
   MeshCollider.setBox(characterEntity)
 
@@ -224,19 +212,51 @@ function addDialog(characterEntity: Entity, alwaysVisible: boolean, robotNumber:
 
     if (getCurrentRobotNumber() === robotNumber) {
       visibilityRobotCharacter.visible = true
-    } else {
-      if(!alwaysVisible) visibilityRobotCharacter.visible = false
-    }      
-
-    if (distance < 8) {
       visibilityPlane.visible = true
       visibilitySign.visible = true
     } else {
-      visibilityPlane.visible = false
-      visibilitySign.visible = false
-      if (!alwaysVisible) visibilityRobotCharacter.visible = false
-    }
+      if(!alwaysVisible) {
+        visibilityRobotCharacter.visible = false
+        visibilityPlane.visible = false
+        visibilitySign.visible = false
+      }
+    }      
   })
+}
+
+export function createLandingPlatform(setRobotNumber: (robotNumber: number) => void) {
+  const entity = engine.addEntity()
+
+  Cube.create(entity)
+
+  const scaleVector =  {
+    x: 20,
+    y: 0.05,
+    z: 20
+  }
+
+  Transform.create(entity, {
+    position: { x: -19, y: 0.05, z: 8 },
+    scale: scaleVector
+  })
+
+  MeshCollider.setBox(entity)
+  utils.triggers.addTrigger(
+    entity,
+    utils.NO_LAYERS,
+    1,
+    [
+      {
+        type: 'box',
+        scale: {x: scaleVector.x, y: scaleVector.y + 0.2, z: scaleVector.z}
+      }
+    ],
+    () => {
+      console.log("IN PLATFORM")
+      setRobotNumber(5)
+    }
+  )
+
 }
 
 export function createPortal(getCheckpoint: () => { x: number; y: number; z: number }) {
@@ -244,7 +264,7 @@ export function createPortal(getCheckpoint: () => { x: number; y: number; z: num
 
   const portal = engine.addEntity()
   Transform.create(portal, {
-    position: Vector3.create(-9, 2, 16),
+    position: Vector3.create(-3, 2, 16),
     scale: Vector3.create(3, 4, 1)
   })
   MeshRenderer.setSphere(portal)
@@ -341,29 +361,25 @@ export function createRoundedCube(
     metallic: 0.2, // Añadimos un poco de brillo metálico
     roughness: 0.8 // Hacemos la superficie un poco más suave
   })
-  utils.triggers.enableDebugDraw(true)
-  if (isTrigger) {
-    utils.triggers.addTrigger(
-      entity,
-      utils.NO_LAYERS,
-      1,
-      [
-        {
-          type: 'box',
-          scale: Vector3.create(scaleX *(-2) *(1 + roundness), scaleY * (-2) * (1 + roundness), scaleZ * (-2) * (1 + roundness)),
-          position: Vector3.create(-2, 4, -3)
-        }
-      ],
-      () => {
+  utils.triggers.addTrigger(
+    entity,
+    utils.NO_LAYERS,
+    1,
+    [
+      {
+        type: 'box',
+        scale: Vector3.create(1.5, 3, 1.5)
+      }
+    ],
+    () => {
+        if(isTrigger && setRobotNumber) {
         console.log('Moving robot to position', robotPositionIndex)
-        if(setRobotNumber) setRobotNumber(robotPositionIndex!)
-      },
-      () => {},
-      Color3.create(1,0,0),
-
-    )
-  }
-
+        setRobotNumber(robotPositionIndex!)
+      }
+    },
+    () => {},
+    Color3.create(1,0,0),
+  )
   return entity
 }
 
